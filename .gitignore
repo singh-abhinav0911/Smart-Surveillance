@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+node_modules/
+runs/
+data/
+dataset/
+
+*.pt
+*.onnx
+*.bin
+
+*.pyc
+.env
+yolov8s_openvino_model/

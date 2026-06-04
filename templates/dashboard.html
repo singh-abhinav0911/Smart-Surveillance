@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Surveillance Dashboard</title>
+</head>
+<body>
+
+<h2>Live Alerts</h2>
+<div id="alerts"></div>
+
+<h2>Camera Feed</h2>
+<img id="cam1" width="600"/>
+
+<script>
+
+const cam = "gate_1";
+document.getElementById("cam1").src = `/video_feed/${cam}`;
+
+const ws = new WebSocket("ws://localhost:8000/ws/alerts");
+
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    const container = document.getElementById("alerts");
+
+    data.forEach(alert => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+            <b>${alert.type}</b> - Cam: ${alert.camera_id}
+        `;
+        container.prepend(div);
+    });
+};
+
+</script>
+
+</body>
+</html>
