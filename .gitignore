@@ -1,29 +1,88 @@
-# Python
-__pycache__/
-*.pyc
-*.pyo
+# =========================
+# Environment
+# =========================
+.env
+.env.*
+!.env.example
 
-# Virtual Environments
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
 venv/
 .venv/
+env/
 
-# Models
+# =========================
+# Model Files
+# =========================
+models/
 *.pt
+*.onnx
+*.engine
+*.tflite
+*.pb
 
-# Database
-*.db
+# =========================
+# Runtime Data
+# =========================
+data/
+runs/
+logs/
+outputs/
 
+# Event snapshots
+data/events/
+
+# =========================
+# Videos & Images
+# =========================
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.jpg
+*.jpeg
+*.png
+
+# =========================
+# OpenVINO Exports
+# =========================
+*_openvino_model/
+*_onnx/
+
+# =========================
 # Logs
+# =========================
 *.log
 
+# =========================
+# Databases
+# =========================
+*.db
+*.sqlite
+*.sqlite3
+
+# =========================
+# Node / React
+# =========================
+node_modules/
+dist/
+build/
+
+# =========================
 # IDE
+# =========================
 .vscode/
 .idea/
 
-# React
-node_modules/
-build/
-
-# OS
+# =========================
+# OS Files
+# =========================
 .DS_Store
 Thumbs.db

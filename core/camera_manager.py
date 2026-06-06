@@ -1,6 +1,7 @@
 from core import shared_state
 from core.pipeline import Pipeline
 from core.alert_engine import AlertEngine
+from utils.logger import get_logger
 import threading
 import time
 from cameras.webcam import WebcamCamera
@@ -8,6 +9,7 @@ from services.pipeline_service import PipelineService
 
 
 alert_engine = AlertEngine(shared_state, {})
+log = get_logger("camera_manager")
 
 
 class CameraManager:
@@ -64,7 +66,7 @@ class CameraManager:
 
             pipeline.stop()
 
-        print("[INFO] Camera manager stopped")
+        log.info("Camera manager stopped")
 
     def monitor_pipelines(self):
 
@@ -74,7 +76,7 @@ class CameraManager:
 
                 if not pipeline.is_alive():
 
-                    print(f"[WARNING] Camera {camera_id} crashed")
+                    log.warning(f"Camera {camera_id} crashed")
 
                     try:
                         pipeline.stop()
@@ -85,7 +87,7 @@ class CameraManager:
 
                     self.start_camera(camera_id, source)
 
-                    print(f"[INFO] Camera {camera_id} restarted")
+                    log.info(f"Camera {camera_id} restarted")
 
             time.sleep(5)
 

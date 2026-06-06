@@ -1,6 +1,9 @@
 import cv2
 import time
+from utils.logger import get_logger
 from core.messages import FramePacket
+
+log = get_logger("frame_reader")
 
 
 class FrameReader:
@@ -35,12 +38,12 @@ class FrameReader:
             actual_fps = self.camera.get(cv2.CAP_PROP_FPS)
             if actual_fps > 0:
                 self.frame_interval = 1.0 / actual_fps
-                print(f"[FrameReader] {camera_id} — video file, FPS: {actual_fps:.1f}")
+                log.info(f"{camera_id} — video file, FPS: {actual_fps:.1f}")
         else:
-            print(f"[FrameReader] {camera_id} — webcam ready")
+            log.info(f"{camera_id} — webcam ready")
 
     def run(self):
-        print(f"[FrameReader] {self.camera_id} started")
+        log.info(f"{self.camera_id} started")
         self.running = True
         last_time = time.time()
 
@@ -61,9 +64,9 @@ class FrameReader:
                 self.camera.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 success, frame = self.camera.read()
                 if not success:
-                    print(f"[FrameReader] {self.camera_id} cannot read — stopping")
+                    log.error(f"{self.camera_id} cannot read — stopping")
                     break
-                print(f"[FrameReader] {self.camera_id} looping video")
+                log.info(f"{self.camera_id} looping video")
 
             self.frame_count += 1
 
@@ -87,11 +90,9 @@ class FrameReader:
             if not submitted:
                 self.dropped_frames += 1
                 if self.dropped_frames % 30 == 0:
-                    print(f"[FrameReader] {self.camera_id} "
-                          f"dropped {self.dropped_frames} frames — inference busy")
+                    log.warning(f"{self.camera_id} dropped {self.dropped_frames} frames — inference busy")
 
     def stop(self):
         self.running = False
         self.camera.release()
-        print(f"[FrameReader] {self.camera_id} stopped — "
-              f"frames: {self.frame_count}, dropped: {self.dropped_frames}")
+        log.info(f"{self.camera_id} stopped — frames: {self.frame_count}, dropped: {self.dropped_frames}")

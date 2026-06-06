@@ -1,62 +1,41 @@
 # app/main.py
 
 from contextlib import asynccontextmanager
-from queue import Queue
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from core.alert_engine import AlertEngine
-from core.event_engine import EventEngine
-from core.shared_state import SharedState
-from core.inference_worker import InferenceWorker
-from services.pipeline_service import PipelineService
+from fastapi.staticfiles import StaticFiles
+import os
+from app_context import inference_worker, pipeline_service
 from app.routes import events
 from app.routes.stream     import router as stream_router
+from app.routes.health import router as health_router
+
 from app.routes.violations import router as violations_router
+from app.routes.api        import router as api_router
+from app.ws.events_ws      import router as ws_router
+from utils.logger import get_logger
+from config.settings import settings
 
-from app.routes.api import router as api_router
-from app.ws.events_ws import router as ws_router
+log = get_logger("app")
 
-# ── Boot system ───────────────────────────────────────────────────────────────
-rules        = {}
-shared_state = SharedState()
-
-event_queue = Queue(maxsize=500)
-
-inference_worker = InferenceWorker(shared_state)
-
-event_engine = EventEngine(saver_queue=event_queue)
-alert_engine = AlertEngine(shared_state, rules)
-
-cameras = {
-    "gate_1": "data/test_videos/test.mp4"
-}
-
-pipeline_service = PipelineService(
-    cameras=cameras,
-    shared_state=shared_state,
-    inference_worker=inference_worker,
-    event_engine=event_engine,
-    alert_engine=alert_engine
-)
-
-# ── Lifespan ──────────────────────────────────────────────────────────────────
+# -- Lifespan -----------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("[APP] Starting inference worker...")
+    log.info("Starting inference worker...")
     inference_worker.start()
 
-    print("[APP] Starting pipelines...")
+    log.info(f"Starting pipelines for cameras: {list(settings.CAMERAS.keys())}")
     pipeline_service.start_all()
 
-    yield  # app runs here
+    yield
 
-    print("[APP] Stopping pipelines...")
+    log.info("Stopping pipelines...")
     pipeline_service.stop_all()
 
-# ── App ───────────────────────────────────────────────────────────────────────
+# -- App ----------------------------------------------------------
 app = FastAPI(lifespan=lifespan)
+os.makedirs("data/events/violations", exist_ok=True)
+app.mount("/snapshots", StaticFiles(directory="data/events/violations"), name="snapshots")
 
 app.add_middleware(
     CORSMiddleware,
@@ -66,7 +45,8 @@ app.add_middleware(
 )
 
 app.include_router(events.router)
-app.include_router(api_router)       # ← /api/stats, /api/violations
+app.include_router(api_router)
 app.include_router(ws_router)
 app.include_router(stream_router)
 app.include_router(violations_router)
+app.include_router(health_router)

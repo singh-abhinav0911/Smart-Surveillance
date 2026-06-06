@@ -2,14 +2,18 @@
 import cv2
 import torch
 from ultralytics import YOLO
+from utils.logger import get_logger
 from core.messages import Detection
+
+
+log = get_logger("detector")
 
 
 class Detector:
 
     def __init__(self, model_path="models/yolov8n.pt", conf=0.5, device=None):
 
-        # ── Auto select device ────────────────────────────────────────
+        # ── Auto select device ────────────────────────────────
         if device is None:
             if torch.cuda.is_available():
                 self.device = "cuda"
@@ -20,7 +24,7 @@ class Detector:
         else:
             self.device = device
 
-        print(f"[Detector] Loading model on {self.device}")
+        log.info(f"Loading model on {self.device}")
 
         self.model = YOLO(model_path)
         self.model.to(self.device)
@@ -30,8 +34,8 @@ class Detector:
         import numpy as np
         dummy = np.zeros((640, 640, 3), dtype="uint8")
         self.model(dummy, verbose=False)
-        print(f"[Detector] Model ready on {self.device}")
-        print(f"[Detector] Classes: {self.model.names}")
+        log.info(f"Model ready on {self.device}")
+        log.info(f"Classes: {self.model.names}")
 
     def detect(self, frame):
 

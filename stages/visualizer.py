@@ -4,6 +4,9 @@ import cv2
 import queue
 import threading
 import time
+from utils.logger import get_logger
+
+log = get_logger("visualizer")
 
 
 class VisualizerStage:
@@ -25,17 +28,17 @@ class VisualizerStage:
    
 
     def run(self):
-        print("[VISUALIZER] started")
-        print("running =", self.running)
+        log.info("started")
+        log.debug(f"running = {self.running}")
 
         while self.running:
 
-            # ── Get latest frame — drop stale ones ───────────────────
+            # ── Get latest frame — drop stale ones ────────────────────
             message = None
             try:
-                print("waiting, queue size =", self.input_queue.qsize())
+                log.debug(f"waiting, queue size = {self.input_queue.qsize()}")
                 message = self.input_queue.get(timeout=0.1)
-                print("got frame")
+                log.debug("got frame")
 
                 # Drain queue — only show latest frame
                 while True:
@@ -86,7 +89,7 @@ class VisualizerStage:
                     pass
 
         cv2.destroyAllWindows()
-        print("[VISUALIZER] stopped")
+        log.info("stopped")
 
     def _draw(self, frame, message):
         """All drawing logic separated for clarity."""

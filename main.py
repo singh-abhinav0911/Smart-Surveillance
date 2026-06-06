@@ -16,6 +16,7 @@ import queue
 import cv2
 import uvicorn
 
+from utils.logger import get_logger
 from app.main import app, pipeline_service
 
 
@@ -28,8 +29,9 @@ def visualizer_loop():
     two consumers on the same queue meant frames were randomly stolen
     and the display showed nothing.
     """
-    print("[VISUALIZER] Main thread display loop started")
-    print("[VISUALIZER] Press Q in any window to quit all cameras")
+    log = get_logger("main")
+    log.info("Main thread display loop started")
+    log.info("Press Q in any window to quit all cameras")
 
     # Wait for pipelines and inference worker to start up
     time.sleep(3)
@@ -98,12 +100,12 @@ def visualizer_loop():
                 cv2.imshow(f"Camera {camera_id}", frame)
 
             except Exception as e:
-                print(f"[VISUALIZER] draw error on {camera_id}: {e}")
+                log.error(f"draw error on {camera_id}: {e}")
 
         # ── Key handler ────────────────────────────────────────────────
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
-            print("[VISUALIZER] Q pressed — stopping all pipelines")
+            log.info("Q pressed — stopping all pipelines")
             pipeline_service.stop_all()
             break
 
@@ -117,14 +119,14 @@ def visualizer_loop():
                     stats["threads_names"], stats["threads_alive"]
                 ) if not alive]
                 if dead:
-                    print(f"[VISUALIZER] WARNING — dead threads on {camera_id}: {dead}")
+                    log.warning(f"WARNING — dead threads on {camera_id}: {dead}")
 
         # ── Small sleep when no frames available ───────────────────────
         if not got_any_frame:
             time.sleep(0.005)
 
     cv2.destroyAllWindows()
-    print("[VISUALIZER] display loop ended")
+    log.info("display loop ended")
 
 
 if __name__ == "__main__":
@@ -141,9 +143,10 @@ if __name__ == "__main__":
         daemon=True
     )
     server_thread.start()
-    print("[MAIN] Uvicorn started on http://127.0.0.1:8000")
+    log = get_logger("main")
+    log.info("Uvicorn started on http://127.0.0.1:8000")
 
     # ── Run visualizer on main thread (required for cv2.imshow) ───────
     visualizer_loop()
 
-    print("[MAIN] Done")
+    log.info("Done")

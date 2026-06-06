@@ -1,4 +1,7 @@
 import easyocr
+from utils.logger import get_logger
+
+log = get_logger("plate_ocr")
 
 class PlateOCR:
 
@@ -34,6 +37,6 @@ class PlateOCR:
 
         except Exception as e:
 
-            print("[OCR ERROR]", e)
+            log.error(f"OCR error: {e}")
 
             return None

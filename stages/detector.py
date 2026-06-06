@@ -1,6 +1,9 @@
 from core.messages import Detection
 
 
+log = get_logger("detector_stage")
+
+
 class DetectorStage:
 
     def __init__(self, input_queue, output_queue, shared_state):
@@ -40,23 +43,19 @@ class DetectorStage:
 
         message.detections = detections
 
-        print(
-            "[DETECTOR]",
-            len(detections),
-            "detections"
-        )
+        log.debug(f"{len(detections)} detections")
 
         # forward to next stage (tracker)
         self.output_queue.put((cam_id, message))
 
     def run(self):
-        print("[DETECTOR] started")
+        log.info("started")
 
         while self.running:
 
             # NOW we expect (cam_id, message, result)
             cam_id, message, result = self.input_queue.get()
-            print("[DETECTOR] got result")
+            log.debug("got result")
 
             self.handle_result(cam_id, message, result)
 

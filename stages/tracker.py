@@ -1,8 +1,11 @@
 # stages/tracker.py
 
 import queue
+from utils.logger import get_logger
 from core.tracker import TrackerManager
 from utils.queue_utils import safe_put
+
+log = get_logger("tracker")
 
 
 class TrackerStage:
@@ -16,20 +19,20 @@ class TrackerStage:
         self.running = True
 
     def run(self):
-        print("[TRACKER] started")
+        log.info("started")
 
         while self.running:
 
-            # ── Get packet with timeout — don't block forever ─────────
+            # ── Get packet with timeout — don't block forever ────────────────────
             try:
                 camera_id, packet = self.input_queue.get(timeout=0.1)
             except queue.Empty:
                 continue
             except Exception as e:
-                print(f"[TRACKER] unpack error: {e} — got: {type(self.input_queue.queue[0] if not self.input_queue.empty() else 'empty')}")
+                log.debug(f"unpack error: {e} — got: {type(self.input_queue.queue[0] if not self.input_queue.empty() else 'empty')}")
                 continue
 
-            print(f"[TRACKER] detections={len(packet.detections)}")
+            log.debug(f"detections={len(packet.detections)}")
 
             # ── Update tracker ────────────────────────────────────────
             try:
@@ -38,7 +41,7 @@ class TrackerStage:
                     packet.frame
                 )
             except Exception as e:
-                print(f"[TRACKER] tracker.update error: {e}")
+                log.debug(f"tracker.update error: {e}")
                 continue
 
             # ── Assign global IDs ─────────────────────────────────────

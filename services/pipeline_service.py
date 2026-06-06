@@ -1,9 +1,11 @@
 from core.pipeline import Pipeline
 from threading import Thread
-
+from utils.logger import get_logger
 from core.reid_manager import ReIDManager
 from core.reid_worker import ReIDWorker 
 from core.reid_model import ReIDModel
+
+log = get_logger("pipeline_service")
 
 
 class PipelineService:
@@ -54,7 +56,7 @@ class PipelineService:
 
             self.threads[camera_id] = t
 
-            print(f"[PIPELINE] Started {camera_id}")
+            log.info(f"Started {camera_id}")
 
     def stop_all(self):
 
@@ -63,7 +65,7 @@ class PipelineService:
         for cam_id, pipeline in self.pipelines.items():
             pipeline.stop()
 
-        print("[PIPELINE] All stopped")
+        log.info("All stopped")
 
     def status(self):
         return {

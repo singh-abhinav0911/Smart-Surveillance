@@ -7,6 +7,9 @@ import threading
 import os
 import queue
 import time
+from utils.logger import get_logger
+
+log = get_logger("database")
 
 try:
     from dotenv import load_dotenv
@@ -108,9 +111,9 @@ class DatabaseManager:
                 connect_timeout=self.connect_timeout,
                 cursor_factory=RealDictCursor,
             )
-            print(f"[DatabaseManager] Connection pool initialized ({self.pool_min}-{self.pool_max} connections)")
+            log.info(f"Connection pool initialized ({self.pool_min}-{self.pool_max} connections)")
         except Exception as e:
-            print(f"[DatabaseManager] ERROR: Could not create connection pool: {e}")
+            log.error(f"Could not create connection pool: {e}")
             raise
 
         self._init_db()
@@ -155,7 +158,7 @@ class DatabaseManager:
             try:
                 self.connection_pool.putconn(conn)
             except Exception as e:
-                print(f"[DatabaseManager] Error returning connection to pool: {e}")
+                log.error(f"Error returning connection to pool: {e}")
                 conn.close()
         else:
             conn.close()
@@ -165,7 +168,7 @@ class DatabaseManager:
         self.shutdown_event_writer()
         if self.connection_pool is not None:
             self.connection_pool.closeall()
-            print("[DatabaseManager] Connection pool closed")
+            log.info("Connection pool closed")
 
     def _start_event_writer(self):
         if not self.async_writes or self.event_writer_thread is not None:
@@ -205,7 +208,7 @@ class DatabaseManager:
                 with self.event_writer_stats_lock:
                     self.event_writer_stats["dropped"] += len(events)
                     self.event_writer_stats["batch_failures"] += 1
-                print(f"[DatabaseManager] Dropped {len(events)} event(s) after batch insert failure")
+                log.warning(f"Dropped {len(events)} event(s) after batch insert failure")
             else:
                 with self.event_writer_stats_lock:
                     self.event_writer_stats["written"] += len(events)
@@ -219,7 +222,7 @@ class DatabaseManager:
                 self.event_writer_stats["queued"] += 1
             return True
         except queue.Full:
-            print("[DatabaseManager] Event queue full; writing synchronously")
+            log.warning("Event queue full; writing synchronously")
             ok = self.batch_insert_events([event])
             with self.event_writer_stats_lock:
                 self.event_writer_stats["sync_fallback"] += 1
@@ -444,7 +447,7 @@ class DatabaseManager:
                     ON mobile_walking_logs(date DESC);
                 ''')
 
-                print("[DatabaseManager] Database indexes created successfully")
+                log.info("Database indexes created successfully")
                 conn.commit()
 
     # ─────────────────────────────────────────────────────────────────────
@@ -512,7 +515,7 @@ class DatabaseManager:
                     for col, sql in violations_migrations.items():
                         if col not in viol_cols:
                             cursor.execute(sql)
-                            print(f"[DatabaseManager] violations: added column '{col}'")
+                            log.info(f"violations: added column '{col}'")
 
                 # ── violations indexes (safe here — columns guaranteed exist)
                 cursor.execute("CREATE INDEX IF NOT EXISTS idx_violations_camera_id ON violations(camera_id)")
@@ -586,7 +589,7 @@ class DatabaseManager:
 
         except Exception as e:
             conn.rollback()
-            print(f"[DatabaseManager] Batch insert error: {e}")
+            log.error(f"Batch insert error: {e}")
             return False
 
         finally:
@@ -629,10 +632,9 @@ class DatabaseManager:
                     image_path
                 ))
                 conn.commit()
-                print(f"[DB] violation saved: {violation_type} "
-                      f"camera={camera_id} track={track_id}")
+                log.info(f"violation saved: {violation_type} camera={camera_id} track={track_id}")
         except Exception as e:
-            print(f"[DB] insert_violation error: {e}")
+            log.error(f"insert_violation error: {e}")
             conn.rollback()
         finally:
             self.close_connection(conn)

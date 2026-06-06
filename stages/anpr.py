@@ -2,18 +2,21 @@ import cv2
 from sympy import re
 import easyocr # pyright: ignore[reportMissingImports]
 from ultralytics import YOLO
+from utils.logger import get_logger
+
+log = get_logger("anpr")
 
 class ANPRStage:
 
     def __init__(self):
-        print("anpr init started   ")
+        log.info("anpr init started")
         self.plate_model = YOLO("models/best.pt")
-        print("yolo loaded")
+        log.info("yolo loaded")
         self.reader = easyocr.Reader(
             ["en"],
             gpu=False
         )
-        print("easyocr loaded")
+        log.info("easyocr loaded")
 
         self.track_to_plate = {}
 
@@ -51,14 +54,14 @@ class ANPRStage:
         return best_plate   
 
     def read_plate(self, plate_crop):
-        print("read plate called")
+        log.debug("read plate called")
 
         try:
 
             results = self.reader.readtext(
                 plate_crop
             )
-            print("OCR results:", results)
+            log.debug(f"OCR results: {results}")
 
             if not results:
                 return None
@@ -87,7 +90,7 @@ class ANPRStage:
 
         except Exception as e:
 
-            print("[OCR ERROR]", e)
+            log.error(f"OCR error: {e}")
 
             return None
         
@@ -120,14 +123,12 @@ class ANPRStage:
         plate = self.read_plate(
             plate_crop
         )
-        print("Vehicle crop OK")
+        log.debug("Vehicle crop OK")
 
         if plate:
 
             self.track_to_plate[track_id] = plate
 
-            print(
-                f"[ANPR] Track {track_id} -> {plate}"
-            )
+            log.info(f"Track {track_id} -> {plate}")
 
         return plate
